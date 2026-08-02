@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="appTitle">BT Cihaz Envanteri</title>
+    <meta name="description" content="A lightweight browser-based IT asset inventory dashboard.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="ph ph-hard-drives"></i>
+                <h1 data-i18n="appTitle">BT Cihaz Envanteri</h1>
+            </div>
+            <div class="header-actions">
+                <div class="lang-switcher">
+                    <button class="btn-lang active" data-lang="tr">TR</button>
+                    <button class="btn-lang" data-lang="en">EN</button>
+                </div>
+                <button id="btn-demo-data" class="btn btn-secondary">
+                    <i class="ph ph-database"></i> <span data-i18n="loadDemo">Demo Veri</span>
+                </button>
+                <button id="btn-export-csv" class="btn btn-secondary">
+                    <i class="ph ph-export"></i> <span data-i18n="exportCsv">CSV İndir</span>
+                </button>
+                <button id="btn-add-device" class="btn btn-primary">
+                    <i class="ph ph-plus"></i> <span data-i18n="assetFormTitle">Cihaz Kaydı</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Dashboard Stats -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="ph ph-devices"></i></div>
+                    <div class="stat-info">
+                        <h3 data-i18n="totalAssets">Toplam Cihaz</h3>
+                        <p id="stat-total" class="stat-value">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active"><i class="ph ph-check-circle"></i></div>
+                    <div class="stat-info">
+                        <h3 data-i18n="activeAssets">Aktif</h3>
+                        <p id="stat-active" class="stat-value">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon repair"><i class="ph ph-wrench"></i></div>
+                    <div class="stat-info">
+                        <h3 data-i18n="repairAssets">Tamirde</h3>
+                        <p id="stat-repair" class="stat-value">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon warning"><i class="ph ph-warning-circle"></i></div>
+                    <div class="stat-info">
+                        <h3 data-i18n="warrantyExpiring">Garanti Yaklaşıyor</h3>
+                        <p id="stat-warranty" class="stat-value">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Device List -->
+            <section class="list-section panel">
+                <div class="panel-header toolbar">
+                    <div>
+                        <h2><i class="ph ph-list-dashes"></i> <span data-i18n="inventoryList">Envanter Listesi</span></h2>
+                        <p class="panel-subtitle" data-i18n="inventorySubtitle">Arama, filtreleme, CSV export ve demo veri işlemleri.</p>
+                    </div>
+                    <div class="toolbar-filters">
+                        <div class="search-box">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" id="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Cihaz, kullanıcı, seri no veya lokasyon ara...">
+                        </div>
+                        <select id="filter-status">
+                            <option value="all" data-i18n="allStatuses">Tüm Durumlar</option>
+                            <option value="active" data-i18n="active">Aktif</option>
+                            <option value="spare" data-i18n="spare">Yedek</option>
+                            <option value="repair" data-i18n="inRepair">Tamirde</option>
+                            <option value="retired" data-i18n="retired">Emekli</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="device">Cihaz</th>
+                                <th data-i18n="user">Kullanıcı</th>
+                                <th data-i18n="hardware">Donanım</th>
+                                <th data-i18n="warranty">Garanti</th>
+                                <th data-i18n="action">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="device-table-body">
+                            <!-- Data injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for Add/Edit Form -->
+    <div id="device-modal" class="modal-overlay">
+        <div class="modal-content panel">
+            <div class="panel-header">
+                <div>
+                    <h2><i class="ph ph-desktop"></i> <span id="form-title" data-i18n="assetFormTitle">Cihaz Kaydı</span></h2>
+                    <p class="panel-subtitle" data-i18n="assetFormSubtitle">Yeni cihaz ekle veya listedeki cihazı düzenle.</p>
+                </div>
+                <button id="btn-close-modal" class="btn btn-text" title="Kapat"><i class="ph ph-x"></i></button>
+            </div>
+            <form id="device-form">
+                <input type="hidden" id="device-id">
+                
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label for="device-name"><span data-i18n="deviceName">Cihaz Adı</span> *</label>
+                        <input type="text" id="device-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="device-brand"><span data-i18n="brandModel">Marka / Model</span> *</label>
+                        <input type="text" id="device-brand" required>
+                    </div>
+                </div>
+                
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label for="device-serial"><span data-i18n="serialNumber">Seri No</span> *</label>
+                        <input type="text" id="device-serial" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="device-warranty"><span data-i18n="warrantyEnd">Garanti Bitiş</span> *</label>
+                        <input type="date" id="device-warranty" required>
+                    </div>
+                </div>
+
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label for="device-user" data-i18n="assignedUser">Atanan Kullanıcı</label>
+                        <input type="text" id="device-user">
+                    </div>
+                    <div class="form-group">
+                        <label for="device-location" data-i18n="location">Lokasyon</label>
+                        <input type="text" id="device-location">
+                    </div>
+                </div>
+
+                <div class="form-group-row">
+                    <div class="form-group">
+                        <label for="device-cpu" data-i18n="cpu">İşlemci</label>
+                        <input type="text" id="device-cpu">
+                    </div>
+                    <div class="form-group">
+                        <label for="device-ram" data-i18n="ram">RAM</label>
+                        <input type="text" id="device-ram">
+                    </div>
+                    <div class="form-group">
+                        <label for="device-disk" data-i18n="disk">Disk</label>
+                        <input type="text" id="device-disk">
+                    </div>
+                </div>
+
+                <div class="form-group-row">
+                    <div class="form-group" style="flex: 0.5;">
+                        <label for="device-status"><span data-i18n="status">Durum</span> *</label>
+                        <select id="device-status" required>
+                            <option value="active" data-i18n="active">Aktif</option>
+                            <option value="spare" data-i18n="spare">Yedek</option>
+                            <option value="repair" data-i18n="inRepair">Tamirde</option>
+                            <option value="retired" data-i18n="retired">Emekli</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1.5;">
+                        <label for="device-notes" data-i18n="notes">Not</label>
+                        <input type="text" id="device-notes">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="btn-cancel-modal" class="btn btn-secondary" data-i18n="resetForm">Formu Temizle</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ph ph-floppy-disk"></i> <span data-i18n="saveAsset">Cihazı Kaydet</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
